@@ -20,7 +20,7 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/MagneticField.h"
-
+#include "math.h"
 #include "lpsensor/LpmsSensorI.h"
 #include "lpsensor/LpmsSensorManagerI.h"
 
@@ -49,7 +49,7 @@ class LpImuProxy
         private_nh.param<std::string>("sensor_model", sensor_model, "DEVICE_LPMS_U2");
         private_nh.param<std::string>("port", port, "/dev/ttyUSB0");
         private_nh.param<std::string>("frame_id", frame_id, "imu");
-        private_nh.param("rate", rate, 200);
+        private_nh.param("rate", rate, 400);
 
         // Timestamp synchronization
         private_nh.param("enable_time_sync", enable_Tsync, true);
@@ -108,11 +108,22 @@ class LpImuProxy
             imu_msg.angular_velocity.y = data.g[1]*3.1415926/180;
             imu_msg.angular_velocity.z = data.g[2]*3.1415926/180;
 
-            // Fill linear acceleration data
-            imu_msg.linear_acceleration.x = -data.a[0]*9.81;
-            imu_msg.linear_acceleration.y = -data.a[1]*9.81;
-            imu_msg.linear_acceleration.z = -data.a[2]*9.81;
+	    if (fabs(data.linAcc[0]) <= 0.001f){
+	      data.linAcc[0] = 0.0f;
+	    }
 
+	    if (fabs(data.linAcc[0]) <= 0.001f){
+	      data.linAcc[1] = 0.0f;
+	    }
+  
+	    if (fabs(data.linAcc[0]) <= 0.001f){
+	      data.linAcc[2] = 0.0f;
+	    }
+            // Fill linear acceleration data
+            imu_msg.linear_acceleration.x = -data.linAcc[0]*9.81;
+            imu_msg.linear_acceleration.y = -data.linAcc[1]*9.81;
+            imu_msg.linear_acceleration.z = -data.linAcc[2]*9.81;
+	  
             // \TODO: Fill covariance matrices
             // msg.orientation_covariance = ...
             // msg.angular_velocity_covariance = ...
@@ -123,13 +134,8 @@ class LpImuProxy
             mag_msg.header.frame_id = frame_id;
 
             // Units are microTesla in the LPMS library, Tesla in ROS.
-            mag_msg.magnetic_field.x = data.b[0]*1e-6;
-            mag_msg.magnetic_field.y = data.b[1]*1e-6;
-            mag_msg.magnetic_field.z = data.b[2]*1e-6;
-
-            // Publish the messages
+           // Publish the messages
             imu_pub.publish(imu_msg);
-            mag_pub.publish(mag_msg);
         }
     }
 

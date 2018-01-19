@@ -106,7 +106,7 @@ class LpImuProxy
             // - scale from deg/s to rad/s
             imu_msg.angular_velocity.x = data.g[0]*3.1415926/180;
             imu_msg.angular_velocity.y = data.g[1]*3.1415926/180;
-            imu_msg.angular_velocity.z = data.g[2]*3.1415926/180;
+            imu_msg.angular_velocity.z = -data.g[2]*3.1415926/180;
 
 	    if (fabs(data.linAcc[0]) <= 0.001f){
 	      data.linAcc[0] = 0.0f;
@@ -120,8 +120,8 @@ class LpImuProxy
 	      data.linAcc[2] = 0.0f;
 	    }
             // Fill linear acceleration data
-            imu_msg.linear_acceleration.x = -data.linAcc[0]*9.81;
-            imu_msg.linear_acceleration.y = -data.linAcc[1]*9.81;
+            imu_msg.linear_acceleration.y = data.linAcc[0]*9.81;
+            imu_msg.linear_acceleration.x = data.linAcc[1]*9.81;
             imu_msg.linear_acceleration.z = -data.linAcc[2]*9.81;
 	  
             // \TODO: Fill covariance matrices

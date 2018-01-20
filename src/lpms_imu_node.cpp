@@ -59,7 +59,7 @@ class LpImuProxy
         imu = manager->addSensor(device_map[sensor_model], port.c_str());
 
         imu_pub = nh.advertise<sensor_msgs::Imu>("imu",1);
-        mag_pub = nh.advertise<sensor_msgs::MagneticField>("mag",1);
+ //       mag_pub = nh.advertise<sensor_msgs::MagneticField>("mag",1);
 
         TimestampSynchronizer::Options defaultSyncOptions;
         defaultSyncOptions.useMedianFilter = true;
@@ -106,7 +106,7 @@ class LpImuProxy
             // - scale from deg/s to rad/s
             imu_msg.angular_velocity.x = data.g[0]*3.1415926/180;
             imu_msg.angular_velocity.y = data.g[1]*3.1415926/180;
-            imu_msg.angular_velocity.z = -data.g[2]*3.1415926/180;
+            imu_msg.angular_velocity.z = data.g[2]*3.1415926/180;
 
 	    if (fabs(data.linAcc[0]) <= 0.001f){
 	      data.linAcc[0] = 0.0f;

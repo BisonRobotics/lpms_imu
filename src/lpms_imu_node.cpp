@@ -51,7 +51,7 @@ class LpImuProxy
         private_nh.param<std::string>("sensor_model", sensor_model, "DEVICE_LPMS_U2");
         private_nh.param<std::string>("port", port, "/dev/ttyUSB0");
         private_nh.param<std::string>("frame_id", frame_id, "imu");
-        private_nh.param("rate", rate, 400);
+        private_nh.param("rate", rate, 100);
 	private_nh.param<float>("clamp_val_x", cl_x, .001);
 	private_nh.param<float>("clamp_val_y", cl_y, .001);
 	private_nh.param<float>("clamp_val_om", cl_om, .001);

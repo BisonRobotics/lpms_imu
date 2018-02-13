@@ -12,6 +12,9 @@
  * - @b ~port The port that the IMU is connected to (default /dev/ttyUSB0)
  * - @b ~frame_id Frame identifier if IMU reference frame for message header (default imu_global)
  * - @b ~rate Update rate, in Hz (default 50)
+ * - @b ~clamp_val_x the lowest x acceleration that is let through
+ * - @b ~clamp_val_y the lowest y acceleration that is let through
+ * - @b ~clamp_val_om the lowest omega that is let through
  */
 
 #include <string>
@@ -19,7 +22,6 @@
 
 #include "ros/ros.h"
 #include "sensor_msgs/Imu.h"
-#include "sensor_msgs/MagneticField.h"
 #include "math.h"
 #include "lpsensor/LpmsSensorI.h"
 #include "lpsensor/LpmsSensorManagerI.h"
@@ -50,6 +52,13 @@ class LpImuProxy
         private_nh.param<std::string>("port", port, "/dev/ttyUSB0");
         private_nh.param<std::string>("frame_id", frame_id, "imu");
         private_nh.param("rate", rate, 400);
+	private_nh.param<float>("clamp_val_x", cl_x, .001);
+	private_nh.param<float>("clamp_val_y", cl_y, .001);
+	private_nh.param<float>("clamp_val_om", cl_om, .001);
+
+
+	ROS_INFO ("cl_x  %f cl_y %f cl_om %f", cl_x, cl_y, cl_om);
+
 
         // Timestamp synchronization
         private_nh.param("enable_time_sync", enable_Tsync, true);
@@ -59,7 +68,6 @@ class LpImuProxy
         imu = manager->addSensor(device_map[sensor_model], port.c_str());
 
         imu_pub = nh.advertise<sensor_msgs::Imu>("imu",1);
- //       mag_pub = nh.advertise<sensor_msgs::MagneticField>("mag",1);
 
         TimestampSynchronizer::Options defaultSyncOptions;
         defaultSyncOptions.useMedianFilter = true;
@@ -106,34 +114,27 @@ class LpImuProxy
             // - scale from deg/s to rad/s
             imu_msg.angular_velocity.x = data.g[0]*3.1415926/180;
             imu_msg.angular_velocity.y = data.g[1]*3.1415926/180;
-            imu_msg.angular_velocity.z = data.g[2]*3.1415926/180;
+            imu_msg.angular_velocity.z = -data.g[2]*3.1415926/180;
 
-	    if (fabs(data.linAcc[0]) <= 0.001f){
+
+	    if (fabs(imu_msg.angular_velocity.z) <= cl_om){
+	      imu_msg.angular_velocity.z = 0.0f;
+	    } 
+
+	    if (fabs(data.linAcc[0]) <= cl_x){
 	      data.linAcc[0] = 0.0f;
 	    }
 
-	    if (fabs(data.linAcc[0]) <= 0.001f){
+	    if (fabs(data.linAcc[1]) <= cl_y){
 	      data.linAcc[1] = 0.0f;
 	    }
   
-	    if (fabs(data.linAcc[0]) <= 0.001f){
-	      data.linAcc[2] = 0.0f;
-	    }
+	    
             // Fill linear acceleration data
             imu_msg.linear_acceleration.y = data.linAcc[0]*9.81;
             imu_msg.linear_acceleration.x = data.linAcc[1]*9.81;
             imu_msg.linear_acceleration.z = -data.linAcc[2]*9.81;
-	  
-            // \TODO: Fill covariance matrices
-            // msg.orientation_covariance = ...
-            // msg.angular_velocity_covariance = ...
-            // msg linear_acceleration_covariance = ...
-
-            /* Fill the magnetometer message */
-            mag_msg.header.stamp = imu_msg.header.stamp;
-            mag_msg.header.frame_id = frame_id;
-
-            // Units are microTesla in the LPMS library, Tesla in ROS.
+	             // Units are microTesla in the LPMS library, Tesla in ROS.
            // Publish the messages
             imu_pub.publish(imu_msg);
         }
@@ -158,16 +159,17 @@ class LpImuProxy
     // Access to ROS node
     ros::NodeHandle nh, private_nh;
     ros::Timer updateTimer;
-    ros::Publisher imu_pub, mag_pub;
+    ros::Publisher imu_pub;
     sensor_msgs::Imu imu_msg;
-    sensor_msgs::MagneticField mag_msg;
 
     // Parameters
     std::string sensor_model;
     std::string port;
     std::string frame_id;
     int rate;
-
+    float cl_x;
+    float cl_y;
+    float cl_om;
     // Timestamp syncronization
     bool enable_Tsync;
 

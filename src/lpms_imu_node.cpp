@@ -57,7 +57,6 @@ class LpImuProxy
 	private_nh.param<float>("clamp_val_om", cl_om, .001);
 
 
-	ROS_INFO ("cl_x  %f cl_y %f cl_om %f", cl_x, cl_y, cl_om);
 
 
         // Timestamp synchronization
@@ -129,7 +128,7 @@ class LpImuProxy
 	      data.linAcc[1] = 0.0f;
 	    }
   
-	    
+    
             // Fill linear acceleration data
             imu_msg.linear_acceleration.y = data.linAcc[0]*9.81;
             imu_msg.linear_acceleration.x = data.linAcc[1]*9.81;
